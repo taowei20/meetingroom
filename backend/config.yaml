@@ -1,0 +1,36 @@
+# 服务器配置
+server:
+  host: "127.0.0.1"
+  port: 5000
+  debug: false
+
+# 数据库配置
+database:
+  path: "../database/meeting_room.db"
+
+# 文件上传配置
+upload:
+  folder: "../uploads"
+  allowed_extensions:
+    - "pdf"
+    - "doc"
+    - "docx"
+    - "xls"
+    - "xlsx"
+    - "ppt"
+    - "pptx"
+    - "txt"
+    - "jpg"
+    - "jpeg"
+    - "png"
+    - "gif"
+  max_content_length: 52428800  # 50MB
+
+# JWT配置
+jwt:
+  secret_key: "jwt-secret-key-2024"
+  access_token_expires: 86400  # 24小时（秒）
+
+# 安全配置
+security:
+  secret_key: "meeting-room-secret-key-2024"

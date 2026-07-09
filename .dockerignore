@@ -1,0 +1,13 @@
+.idea
+.venv
+node_modules
+frontend/node_modules
+frontend/dist
+database
+uploads
+*.pyc
+__pycache__
+build
+dist
+.git
+.gitignore
