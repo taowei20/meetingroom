@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from config import Config, get_server_config
 from models import db, User
 from werkzeug.security import generate_password_hash
+import secrets
 
 
 def create_app():
@@ -13,7 +14,7 @@ def create_app():
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, origins=Config.CORS_ORIGINS)
     JWTManager(app)
     db.init_app(app)
 
@@ -62,25 +63,25 @@ def init_data():
     if User.query.first():
         return
 
+    admin_password = secrets.token_urlsafe(8)
     admin = User(
         username="admin",
         name="系统管理员",
         department="信息技术部",
         phone="13800000000",
         is_admin=True,
-        password_hash=generate_password_hash("admin123"),
-    )
-    demo_user = User(
-        username="user1",
-        name="张三",
-        department="市场部",
-        phone="13900000001",
-        is_admin=False,
-        password_hash=generate_password_hash("123456"),
+        password_hash=generate_password_hash(admin_password),
     )
 
-    db.session.add_all([admin, demo_user])
+    db.session.add(admin)
     db.session.commit()
+
+    print(f"\n{'='*50}")
+    print(f"  初始管理员账号已创建")
+    print(f"  用户名: admin")
+    print(f"  密码:   {admin_password}")
+    print(f"  请登录后立即修改密码!")
+    print(f"{'='*50}\n")
 
     from models import Room
     rooms = [

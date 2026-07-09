@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '../utils/auth'
+import { useUserStore } from '../store/user'
 
 const routes = [
   {
@@ -75,6 +76,13 @@ router.beforeEach((to, from, next) => {
     next('/login')
   } else if (to.path === '/login' && token) {
     next('/')
+  } else if (to.meta.admin) {
+    const userStore = useUserStore()
+    if (!userStore.isAdmin) {
+      next('/')
+    } else {
+      next()
+    }
   } else {
     next()
   }

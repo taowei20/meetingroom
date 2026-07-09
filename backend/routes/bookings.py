@@ -281,21 +281,37 @@ def upload_attachment(booking_id):
     if file.filename == "":
         return jsonify({"error": "请选择文件"}), 400
 
-    ext = os.path.splitext(secure_filename(file.filename))[1] or ".dat"
-    filename = f"booking_{booking_id}_{uuid.uuid4().hex[:8]}{ext}"
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower().lstrip(".") or "dat"
+    if ext not in Config.ALLOWED_EXTENSIONS:
+        return jsonify({"error": f"不支持的文件类型，允许: {', '.join(Config.ALLOWED_EXTENSIONS)}"}), 400
+
+    filename = f"booking_{booking_id}_{uuid.uuid4().hex[:8]}.{ext}"
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 
+    safe_name = secure_filename(file.filename) or "attachment"
     booking.attachment = filename
-    booking.attachment_name = file.filename
+    booking.attachment_name = safe_name
     db.session.commit()
 
-    return jsonify({"message": "上传成功", "filename": filename, "name": file.filename})
+    return jsonify({"message": "上传成功", "filename": filename, "name": safe_name})
 
 
 @bookings_bp.route("/api/uploads/<filename>", methods=["GET"])
+@jwt_required()
 def download_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+
+    basename = os.path.basename(filename)
+    booking = Booking.query.filter_by(attachment=basename).first()
+    if not booking:
+        return jsonify({"error": "文件不存在"}), 404
+
+    if not user.is_admin and booking.user_id != user_id:
+        return jsonify({"error": "无权限下载此文件"}), 403
+
+    return send_from_directory(UPLOAD_FOLDER, basename, as_attachment=True)
 
 
 @bookings_bp.route("/api/users/options", methods=["GET"])

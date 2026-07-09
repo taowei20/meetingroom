@@ -1,6 +1,7 @@
 import os
 import sys
 import yaml
+import secrets
 
 
 def get_base_dir():
@@ -25,14 +26,15 @@ _yaml_config = load_yaml_config()
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", _yaml_config['security']['secret_key'])
+    SECRET_KEY = _yaml_config['server']["SECRET_KEY"] or secrets.token_hex(32)
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, _yaml_config['database']['path'])}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", _yaml_config['jwt']['secret_key'])
+    JWT_SECRET_KEY = _yaml_config['jwt']["JWT_SECRET_KEY"] or secrets.token_hex(32)
     JWT_ACCESS_TOKEN_EXPIRES = _yaml_config['jwt']['access_token_expires']
     MAX_CONTENT_LENGTH = _yaml_config['upload']['max_content_length']
     ALLOWED_EXTENSIONS = _yaml_config['upload']['allowed_extensions']
     UPLOAD_FOLDER = os.path.join(BASE_DIR, _yaml_config['upload']['folder'])
+    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
 
 
 def get_server_config():

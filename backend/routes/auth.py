@@ -40,8 +40,8 @@ def change_password():
     if not old_password or not new_password:
         return jsonify({"error": "旧密码和新密码不能为空"}), 400
 
-    if len(new_password) < 4:
-        return jsonify({"error": "新密码长度不能少于4位"}), 400
+    if len(new_password) < 8:
+        return jsonify({"error": "新密码长度不能少于8位"}), 400
 
     user = User.query.get(user_id)
     if not user or not check_password_hash(user.password_hash, old_password):

@@ -1,8 +1,9 @@
 # 服务器配置
 server:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   port: 5000
-  debug: false
+  debug: False
+  SECRET_KEY: "uns-23498wernkasdfu2341234Kdjw8e"
 
 # 数据库配置
 database:
@@ -10,7 +11,7 @@ database:
 
 # 文件上传配置
 upload:
-  folder: "../uploads"
+  folder: "./uploads"
   allowed_extensions:
     - "pdf"
     - "doc"
@@ -24,13 +25,14 @@ upload:
     - "jpeg"
     - "png"
     - "gif"
-  max_content_length: 52428800  # 50MB
+    - "zip"
+    - "rar"
+    - "7z"
+    - "gz"
+    - "tar"
+  max_content_length: 102428800  # 100MB
 
 # JWT配置
 jwt:
-  secret_key: "jwt-secret-key-2024"
   access_token_expires: 86400  # 24小时（秒）
-
-# 安全配置
-security:
-  secret_key: "meeting-room-secret-key-2024"
+  JWT_SECRET_KEY: "uns-is498wernkasdfCd2341234Kd8xw"

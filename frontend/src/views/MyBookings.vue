@@ -39,7 +39,7 @@
           <template #default="{ row }">
             <div v-if="row.attachment_name" class="attachment-info">
               <el-icon><Document /></el-icon>
-              <a :href="`/api/uploads/${row.attachment}`" target="_blank" class="attachment-link">
+              <a href="#" class="attachment-link" @click.prevent="downloadFile(row)">
                 {{ row.attachment_name }}
               </a>
               <el-button v-if="canUpload(row)" size="small" type="warning" link @click="openUploadDialog(row)">
@@ -139,6 +139,30 @@ function canUpload(row) {
   if (row.status !== 'active') return false
   if (isFuture(row)) return false
   return true
+}
+
+async function downloadFile(row) {
+  try {
+    const response = await fetch(`/api/uploads/${row.attachment}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      ElMessage.error(err.error || '下载失败')
+      return
+    }
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = row.attachment_name || 'attachment'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('下载失败')
+  }
 }
 
 async function loadData() {
