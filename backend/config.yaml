@@ -11,7 +11,7 @@ database:
 
 # 文件上传配置
 upload:
-  folder: "./uploads"
+  folder: "../uploads"
   allowed_extensions:
     - "pdf"
     - "doc"

@@ -25,6 +25,7 @@ COPY backend/ backend/
 #    pyinstaller pyinstaller.spec --clean && \
 #    rm -rf /app/build /app/*.spec
 
+#--from=frontend-builder 表示从虚拟机内部复制
 COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/nginx.conf

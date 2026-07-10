@@ -1,1 +1,4 @@
+#构建
 docker build . -t tw/meetingroom:latest
+
+docker save tw/meetingroom > mr.tar

@@ -4,9 +4,17 @@
       <template #header>
         <div class="card-header">
           <span>用户管理</span>
-          <el-button type="primary" @click="openDialog()">
-            <el-icon><Plus /></el-icon> 新增用户
-          </el-button>
+          <div class="header-btns">
+            <el-button @click="handleDownloadTemplate">
+              <el-icon><Download /></el-icon> 导入模板
+            </el-button>
+            <el-button type="success" @click="importDialogVisible = true">
+              <el-icon><Upload /></el-icon> 批量导入
+            </el-button>
+            <el-button type="primary" @click="openDialog()">
+              <el-icon><Plus /></el-icon> 新增用户
+            </el-button>
+          </div>
         </div>
       </template>
       <div class="search-bar">
@@ -71,14 +79,45 @@
         <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="importDialogVisible" title="批量导入用户" width="480px" destroy-on-close>
+      <div class="import-tips">
+        <p><strong>导入说明：</strong></p>
+        <ul>
+          <li>请先下载导入模板，按模板格式填写数据</li>
+          <li>Excel文件需包含表头行，数据从第2行开始</li>
+          <li>登录账号重复的用户将自动跳过</li>
+          <li>密码列留空则默认使用 <code>123456</code></li>
+        </ul>
+      </div>
+      <el-upload
+        ref="importUploadRef"
+        :auto-upload="false"
+        :limit="1"
+        accept=".xlsx,.xls"
+        :on-change="handleImportFileChange"
+        :on-exceed="handleImportExceed"
+        drag
+      >
+        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+        <div class="el-upload__text">将Excel文件拖到此处，或<em>点击上传</em></div>
+        <template #tip>
+          <div class="el-upload__tip">仅支持 .xlsx 格式文件</div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importing" @click="handleImport">开始导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
-import { getUsers, createUser, updateUser, deleteUser } from '../api/users'
+import { Plus, Search, Download, Upload, UploadFilled } from '@element-plus/icons-vue'
+import { getUsers, createUser, updateUser, deleteUser, downloadUserImportTemplate, importUsers } from '../api/users'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -88,6 +127,11 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
 const formRef = ref(null)
+
+const importDialogVisible = ref(false)
+const importing = ref(false)
+const importFile = ref(null)
+const importUploadRef = ref(null)
 
 const form = ref({
   username: '',
@@ -164,6 +208,61 @@ async function handleDelete(id) {
   loadData()
 }
 
+async function handleDownloadTemplate() {
+  try {
+    const response = await downloadUserImportTemplate()
+    if (!response.ok) {
+      ElMessage.error('下载失败')
+      return
+    }
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '用户导入模板.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('下载失败')
+  }
+}
+
+function handleImportFileChange(file) {
+  importFile.value = file.raw
+}
+
+function handleImportExceed() {
+  ElMessage.warning('只能上传一个文件，请先移除已选文件')
+}
+
+async function handleImport() {
+  if (!importFile.value) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
+  importing.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', importFile.value)
+    const res = await importUsers(formData)
+    ElMessage.success(res.message)
+    if (res.errors && res.errors.length > 0) {
+      console.warn('导入详情:', res.errors)
+    }
+    importDialogVisible.value = false
+    importFile.value = null
+    importUploadRef.value?.clearFiles()
+    loadData()
+  } catch (e) {
+    const msg = e.response?.data?.error || '导入失败'
+    ElMessage.error(msg)
+  } finally {
+    importing.value = false
+  }
+}
+
 onMounted(loadData)
 </script>
 
@@ -173,9 +272,30 @@ onMounted(loadData)
   justify-content: space-between;
   align-items: center;
 }
+.header-btns {
+  display: flex;
+  gap: 8px;
+}
 .search-bar {
   display: flex;
   gap: 10px;
   margin-bottom: 16px;
+}
+.import-tips {
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.8;
+}
+.import-tips ul {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+.import-tips code {
+  background: #f5f5f5;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #e6a23c;
 }
 </style>

@@ -1,6 +1,9 @@
-from flask import Blueprint, request, jsonify
+import io
+import os
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
+from openpyxl import Workbook, load_workbook
 from models import db, User
 
 users_bp = Blueprint("users", __name__)
@@ -112,3 +115,95 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({"message": "删除成功"})
+
+
+@users_bp.route("/api/users/import/template", methods=["GET"])
+@jwt_required()
+def download_import_template():
+    admin = require_admin()
+    if not admin:
+        return jsonify({"error": "无权限"}), 403
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "用户导入模板"
+    ws.append(["登录账号", "用户名", "所属部门", "密码"])
+
+    ws.column_dimensions["A"].width = 20
+    ws.column_dimensions["B"].width = 15
+    ws.column_dimensions["C"].width = 20
+    ws.column_dimensions["D"].width = 15
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="用户导入模板.xlsx",
+    )
+
+
+@users_bp.route("/api/users/import", methods=["POST"])
+@jwt_required()
+def import_users():
+    admin = require_admin()
+    if not admin:
+        return jsonify({"error": "无权限"}), 403
+
+    if "file" not in request.files:
+        return jsonify({"error": "请选择文件"}), 400
+
+    file = request.files["file"]
+    if not file.filename.endswith((".xlsx", ".xls")):
+        return jsonify({"error": "请上传Excel文件(.xlsx)"}), 400
+
+    try:
+        wb = load_workbook(file, read_only=True)
+        ws = wb.active
+
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+        if not rows:
+            return jsonify({"error": "文件为空"}), 400
+
+        created = 0
+        skipped = 0
+        errors = []
+
+        for i, row in enumerate(rows, start=2):
+            username = str(row[0]).strip() if row[0] else ""
+            name = str(row[1]).strip() if row[1] else ""
+            department = str(row[2]).strip() if row[2] else ""
+            password = str(row[3]).strip() if row[3] else "123456"
+
+            if not username or not name:
+                errors.append(f"第{i}行: 登录账号和用户名不能为空")
+                skipped += 1
+                continue
+
+            if User.query.filter_by(username=username).first():
+                skipped += 1
+                continue
+
+            user = User(
+                username=username,
+                name=name,
+                department=department,
+                password_hash=generate_password_hash(password),
+            )
+            db.session.add(user)
+            created += 1
+
+        db.session.commit()
+        wb.close()
+
+        return jsonify({
+            "message": f"导入完成: 成功{created}条, 跳过{skipped}条",
+            "created": created,
+            "skipped": skipped,
+            "errors": errors,
+        })
+    except Exception as e:
+        return jsonify({"error": f"文件解析失败: {str(e)}"}), 400

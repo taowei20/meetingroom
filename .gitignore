@@ -1,13 +1,13 @@
 # ---> Python
 # Byte-compiled / optimized / DLL files
 backend/__pycache__/
-backend/uploads/
+uploads/
 *.py[cod]
 *$py.class
 
 # C extensions
 *.so
-
+database/
 # Distribution / packaging
 .Python
 build/
@@ -188,3 +188,5 @@ test/
 
 /frontend/node_modules/
 
+/database
+database/meeting_room.db
