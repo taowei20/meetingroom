@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash, generate_password_hash
-from models import db, User
+from models import db, User, LoginLog
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -21,6 +21,14 @@ def login():
 
     if not user.is_active:
         return jsonify({"error": "账号已被禁用，请联系管理员"}), 403
+
+    log = LoginLog(
+        username=username+'/'+user.name,  # 记录登录的登录账号和用户名
+        ip_address=request.remote_addr or "",
+        user_agent=request.headers.get("User-Agent", ""),
+    )
+    db.session.add(log)
+    db.session.commit()
 
     access_token = create_access_token(identity=str(user.id))
     return jsonify({
@@ -76,3 +84,21 @@ def update_current_user():
     user.phone = data.get("phone", user.phone)
     db.session.commit()
     return jsonify(user.to_dict())
+
+
+@auth_bp.route("/api/login-logs", methods=["GET"])
+@jwt_required()
+def list_login_logs():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user or not user.is_admin:
+        return jsonify({"error": "无权限"}), 403
+
+    keyword = request.args.get("keyword", "").strip()
+    query = LoginLog.query
+
+    if keyword:
+        query = query.filter(LoginLog.username.contains(keyword))
+
+    logs = query.order_by(LoginLog.login_time.desc()).limit(200).all()
+    return jsonify([log.to_dict() for log in logs])

@@ -91,6 +91,25 @@ class Booking(db.Model):
         }
 
 
+class LoginLog(db.Model):
+    __tablename__ = "login_logs"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(50), nullable=False)
+    ip_address = db.Column(db.String(50), default="")
+    user_agent = db.Column(db.String(500), default="")
+    login_time = db.Column(db.DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "login_time": self.login_time.isoformat() if self.login_time else None,
+        }
+
+
 class SystemBooking(db.Model):
     __tablename__ = "system_bookings"
 

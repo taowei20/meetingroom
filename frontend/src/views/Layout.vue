@@ -38,6 +38,10 @@
           <el-icon><DataAnalysis /></el-icon>
           <template #title>预订管理</template>
         </el-menu-item>
+        <el-menu-item v-if="userStore.isAdmin" index="/login-logs">
+          <el-icon><Clock /></el-icon>
+          <template #title>登录日志</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -82,7 +86,7 @@ import { useUserStore } from '../store/user'
 import { ElMessageBox } from 'element-plus'
 import {
   Odometer, User, OfficeBuilding, Calendar, List, DataAnalysis,
-  Fold, Expand, UserFilled, ArrowDown,
+  Fold, Expand, UserFilled, ArrowDown, Clock,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

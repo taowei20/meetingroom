@@ -50,6 +50,12 @@ const routes = [
         meta: { title: '预订管理', admin: true },
       },
       {
+        path: 'login-logs',
+        name: 'LoginLogs',
+        component: () => import('../views/LoginLog.vue'),
+        meta: { title: '登录日志', admin: true },
+      },
+      {
         path: 'change-password',
         name: 'ChangePassword',
         component: () => import('../views/ChangePassword.vue'),

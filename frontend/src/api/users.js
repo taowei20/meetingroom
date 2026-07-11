@@ -28,3 +28,7 @@ export function importUsers(formData) {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+export function getLoginLogs(params) {
+  return request.get('/api/login-logs', { params })
+}
