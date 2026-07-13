@@ -13,7 +13,7 @@
         <el-button type="primary" @click="loadData">搜索</el-button>
       </div>
       <el-table :data="tableData" v-loading="loading" stripe border>
-        <el-table-column prop="username" label="登录账号" width="130" />
+        <el-table-column prop="username" label="登录账号" width="150" />
         <el-table-column prop="ip_address" label="登录IP" width="150" />
         <el-table-column prop="user_agent" label="浏览器/设备" min-width="300" show-overflow-tooltip />
         <el-table-column prop="login_time" label="登录时间" width="220" />

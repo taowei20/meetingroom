@@ -1,21 +1,33 @@
 <template>
   <div class="login-container">
-    <div class="login-card">
-      <h2 class="login-title">紫软会议室预订系统</h2>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="0" size="large">
-        <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" :prefix-icon="User" />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :loading="loading" style="width: 100%" @click="handleLogin">登 录</el-button>
-        </el-form-item>
-      </el-form>
-
-<!--      <h3 class="login-title">会议室预订系统升级维护中<br><br><span style="color:red">请去三楼前台登记预订会议室</span> <br><br>具体恢复时间另行通知!</h3>-->
-<!--   -->
+    <div class="login-wrapper">
+      <div class="login-left">
+        <div class="left-content">
+          <div class="left-text">
+            <h2>紫软会议室预订系统</h2>
+          </div>
+          <img :src="meetroomImg" alt="meeting room" class="login-image" />
+        </div>
+      </div>
+      <div class="login-right">
+        <div class="login-card">
+          <div class="card-header">
+            <h3 class="card-title">欢迎登录</h3>
+            <p class="card-subtitle">请使用账号密码登录系统</p>
+          </div>
+          <el-form ref="formRef" :model="form" :rules="rules" label-width="0" size="large">
+            <el-form-item prop="username">
+              <el-input v-model="form.username" placeholder="请输入用户名" :prefix-icon="User" />
+            </el-form-item>
+            <el-form-item prop="password">
+              <el-input v-model="form.password" type="password" placeholder="请输入密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" :loading="loading" style="width: 100%" @click="handleLogin">登 录</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -28,6 +40,7 @@ import { ElMessage } from 'element-plus'
 import { login } from '../api/auth'
 import { setToken } from '../utils/auth'
 import { useUserStore } from '../store/user'
+import meetroomImg from '../asserts/meetroom.png'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -51,7 +64,6 @@ async function handleLogin() {
     ElMessage.success('登录成功')
     router.push('/')
   } catch (e) {
-    // error handled by interceptor
   } finally {
     loading.value = false
   }
@@ -62,39 +74,100 @@ async function handleLogin() {
 .login-container {
   width: 100%;
   height: 100vh;
+  background: #f0f2f5;
   display: flex;
-  justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  justify-content: center;
+}
+.login-wrapper {
+  display: flex;
+  width: 1000px;
+  height: 600px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.login-left {
+  flex: 1;
+  background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.left-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.login-image {
+  width: 640px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+.left-text {
+  text-align: center;
+  color: #fff;
+  margin-top: 10px
+}
+.left-text h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.left-text p {
+  font-size: 14px;
+  opacity: 0.85;
+  letter-spacing: 1px;
+}
+.login-right {
+  width: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
 }
 .login-card {
   width: 100%;
-  max-width: 400px;
-  padding: 40px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  max-width: 360px;
 }
-.login-title {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 22px;
+.card-header {
+  margin-bottom: 32px;
 }
-.login-hint {
-  text-align: center;
-  font-size: 12px;
+.card-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+.card-subtitle {
+  font-size: 14px;
   color: #999;
-  margin-top: 10px;
 }
-@media (max-width: 480px) {
-  .login-card {
-    padding: 24px 20px;
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+    width: 90%;
+    height: auto;
+    min-height: 500px;
   }
-  .login-title {
-    font-size: 18px;
-    margin-bottom: 20px;
+  .login-left {
+    padding: 32px 20px;
+    min-height: 200px;
+  }
+  .login-image {
+    width: 160px;
+  }
+  .login-right {
+    width: 100%;
+    padding: 32px 24px;
+  }
+  .left-text h2 {
+    font-size: 20px;
   }
 }
 </style>
