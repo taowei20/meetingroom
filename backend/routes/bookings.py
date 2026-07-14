@@ -1,5 +1,6 @@
 import os
 import uuid
+import calendar
 from datetime import datetime, date, timedelta
 from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -61,6 +62,65 @@ def list_bookings():
             "user_department": "",
             "user_phone": "",
         })
+
+    return jsonify(result)
+
+
+@bookings_bp.route("/api/bookings/month", methods=["GET"])
+@jwt_required()
+def list_month_bookings():
+    from models import SystemBooking
+    year_str = request.args.get("year", "")
+    month_str = request.args.get("month", "")
+
+    try:
+        year = int(year_str)
+        month = int(month_str)
+        if not (1 <= month <= 12):
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify({"error": "年月参数错误"}), 400
+
+    last_day = calendar.monthrange(year, month)[1]
+    start_date = date(year, month, 1)
+    end_date = date(year, month, last_day)
+
+    bookings = Booking.query.filter(
+        and_(
+            Booking.booking_date >= start_date,
+            Booking.booking_date <= end_date,
+            Booking.status == "active",
+        )
+    ).all()
+
+    result = [b.to_dict() for b in bookings]
+
+    for day in range(1, last_day + 1):
+        d = date(year, month, day)
+        js_weekday = (d.weekday() + 1) % 7
+        system_bookings = SystemBooking.query.filter(
+            and_(
+                SystemBooking.weekday == js_weekday,
+                SystemBooking.is_active == True,
+            )
+        ).all()
+        for sb in system_bookings:
+            result.append({
+                "id": f"sys_{sb.id}_{day}",
+                "room_id": sb.room_id,
+                "user_id": 0,
+                "booking_date": d.isoformat(),
+                "start_time": sb.start_time,
+                "end_time": sb.end_time,
+                "status": "active",
+                "meeting_content": sb.remark,
+                "is_system": True,
+                "room_name": sb.room.name if sb.room else None,
+                "room_code": sb.room.room_code if sb.room else None,
+                "user_name": "系统预订",
+                "user_department": "",
+                "user_phone": "",
+            })
 
     return jsonify(result)
 

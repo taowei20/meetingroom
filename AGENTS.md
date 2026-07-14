@@ -25,24 +25,30 @@ cd frontend
 npm install
 npm run dev
 ```
-Vite proxies `/api` to `http://127.0.0.1:5000`. Frontend runs on port 3000, backend on 5000.
+
+Vite proxies `/api` to `http://10.19.1.168:5000` (hardcoded in `vite.config.js`). The target IP is not `localhost` — it's a remote/internal address. If developing locally, change this to your backend's actual IP.
+
+CORS origin allowlist defaults to `localhost:3000,localhost:5173`. Override via env var:
+```
+CORS_ORIGINS=http://localhost:3000,http://10.19.1.168:3000 python app.py
+```
 
 ## Build & Deploy
 
-**Docker (production):**
+**Docker (multi-stage build):**
 ```bash
 docker build . -t tw/meetingroom
+docker save tw/meetingroom > mr.tar
 docker compose up -d
 ```
-Single container: nginx serves frontend static files + proxies `/api/` to Flask on 127.0.0.1:5000.
 
-**Production services:** nginx (port 80) + Flask (port 5000 internal).
+Dockerfile uses two stages: `node:18-alpine` builds the frontend, `python:3.11-slim` runs Flask + nginx. Single container exposes port 80. nginx serves frontend static files and proxies `/api/` to Flask on 127.0.0.1:5000. Both nginx and Flask enforce a 50MB upload limit.
 
 ## Key Config
 
 - `backend/config.yaml` — server port, DB path, JWT secrets, upload settings
-- `backend/config.py` — loads YAML into Flask Config class
-- `frontend/vite.config.js` — dev server port and API proxy
+- `backend/config.py` — loads YAML into Flask Config class; has PyInstaller compatibility (`sys._MEIPASS` check)
+- `frontend/vite.config.js` — dev server port and API proxy target
 
 ## Database
 
@@ -57,7 +63,7 @@ All under `/api/`, registered as Flask blueprints in `backend/app.py`:
 - `routes/users.py` — user CRUD (admin)
 - `routes/rooms.py` — room management
 - `routes/bookings.py` — booking CRUD
-- `routes/system_bookings.py` — recurring system bookings
+- `routes/system_bookings.py` — recurring system bookings (weekday-based, 0=Sunday)
 
 ## Auth
 
@@ -73,7 +79,9 @@ JWT-based (`flask-jwt-extended`). Token in Authorization header. Admin users hav
 ## Gotchas
 
 - Database and uploads are gitignored — first run creates them fresh
-- No test suite exists
+- No test suite, no linter, no typecheck, no formatter configured — `npm run` only offers `dev`, `build`, `preview`
 - `config.yaml` contains hardcoded JWT secrets (not env-var based)
-- Upload limit: 50MB (app.py) but config.yaml says 100MB — app.py wins
+- Upload limit: 50MB in `app.py` and `nginx.conf`, but `config.yaml` says 100MB — app.py wins
 - Admin password is randomly generated on first run and printed to stdout
+- `frontend/src/asserts/` directory name is a typo (should be "assets") — don't "fix" it without updating all imports
+- `requirements.txt` includes `openpyxl` for Excel export

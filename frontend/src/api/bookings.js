@@ -4,6 +4,10 @@ export function getBookings(params) {
   return request.get('/api/bookings', { params })
 }
 
+export function getMonthlyBookings(params) {
+  return request.get('/api/bookings/month', { params })
+}
+
 export function createBooking(data) {
   return request.post('/api/bookings', data)
 }

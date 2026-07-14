@@ -6,6 +6,15 @@ from models import db, User, LoginLog
 auth_bp = Blueprint("auth", __name__)
 
 
+def get_real_ip():
+    if request.headers.get("X-Real-IP"):
+        return request.headers["X-Real-IP"]
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.remote_addr or ""
+
+
 @auth_bp.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -23,8 +32,8 @@ def login():
         return jsonify({"error": "账号已被禁用，请联系管理员"}), 403
 
     log = LoginLog(
-        username=username+'/'+user.name,  # 记录登录的登录账号和用户名
-        ip_address=request.remote_addr or "",
+        username=username+'/'+user.name,
+        ip_address=get_real_ip(),
         user_agent=request.headers.get("User-Agent", ""),
     )
     db.session.add(log)
