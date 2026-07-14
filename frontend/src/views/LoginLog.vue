@@ -18,6 +18,17 @@
         <el-table-column prop="user_agent" label="浏览器/设备" min-width="300" show-overflow-tooltip />
         <el-table-column prop="login_time" label="登录时间" width="220" />
       </el-table>
+      <div class="pagination-wrap">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="loadData"
+          @current-change="loadData"
+        />
+      </div>
     </el-card>
   </div>
 </template>
@@ -30,11 +41,16 @@ import { getLoginLogs } from '../api/users'
 const loading = ref(false)
 const tableData = ref([])
 const keyword = ref('')
+const currentPage = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 
 async function loadData() {
   loading.value = true
   try {
-    tableData.value = await getLoginLogs({ keyword: keyword.value })
+    const res = await getLoginLogs({ keyword: keyword.value, page: currentPage.value, page_size: pageSize.value })
+    tableData.value = res.items
+    total.value = res.total
   } finally {
     loading.value = false
   }
@@ -53,5 +69,10 @@ onMounted(loadData)
   display: flex;
   gap: 10px;
   margin-bottom: 16px;
+}
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

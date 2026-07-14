@@ -104,10 +104,20 @@ def list_login_logs():
         return jsonify({"error": "无权限"}), 403
 
     keyword = request.args.get("keyword", "").strip()
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("page_size", 20, type=int)
+
     query = LoginLog.query
 
     if keyword:
         query = query.filter(LoginLog.username.contains(keyword))
 
-    logs = query.order_by(LoginLog.login_time.desc()).limit(200).all()
-    return jsonify([log.to_dict() for log in logs])
+    total = query.count()
+    logs = query.order_by(LoginLog.login_time.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    return jsonify({
+        "items": [log.to_dict() for log in logs],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })

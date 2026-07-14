@@ -235,15 +235,24 @@ def my_bookings():
 def my_bookings_history():
     user_id = int(get_jwt_identity())
     status = request.args.get("status", "")
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("page_size", 20, type=int)
 
     query = Booking.query.filter_by(user_id=user_id)
     if status:
         query = query.filter_by(status=status)
 
+    total = query.count()
     bookings = query.order_by(
         Booking.booking_date.desc(), Booking.start_time.desc()
-    ).all()
-    return jsonify([b.to_dict() for b in bookings])
+    ).offset((page - 1) * page_size).limit(page_size).all()
+
+    return jsonify({
+        "items": [b.to_dict() for b in bookings],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })
 
 
 @bookings_bp.route("/api/bookings/all", methods=["GET"])
@@ -258,6 +267,8 @@ def all_bookings():
     keyword = request.args.get("keyword", "").strip()
     date_from = request.args.get("date_from", "")
     date_to = request.args.get("date_to", "")
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("page_size", 20, type=int)
 
     query = Booking.query
 
@@ -288,10 +299,17 @@ def all_bookings():
         except ValueError:
             pass
 
+    total = query.count()
     bookings = query.order_by(
         Booking.booking_date.desc(), Booking.start_time.desc()
-    ).all()
-    return jsonify([b.to_dict() for b in bookings])
+    ).offset((page - 1) * page_size).limit(page_size).all()
+
+    return jsonify({
+        "items": [b.to_dict() for b in bookings],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })
 
 
 @bookings_bp.route("/api/bookings/<int:booking_id>/transfer", methods=["PUT"])

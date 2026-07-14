@@ -60,6 +60,17 @@
               </template>
             </el-table-column>
           </el-table>
+          <div class="pagination-wrap">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[20, 50, 100]"
+              :total="total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="loadData"
+              @current-change="loadData"
+            />
+          </div>
         </el-tab-pane>
 
         <el-tab-pane label="系统预订" name="system">
@@ -183,6 +194,9 @@ const keyword = ref('')
 const dateRange = ref(null)
 const statusFilter = ref('')
 const activeTab = ref('normal')
+const currentPage = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 
 const transferDialogVisible = ref(false)
 const transferLoading = ref(false)
@@ -247,12 +261,14 @@ function isBookingEnded(row) {
 async function loadData() {
   loading.value = true
   try {
-    const params = { keyword: keyword.value, status: statusFilter.value }
+    const params = { keyword: keyword.value, status: statusFilter.value, page: currentPage.value, page_size: pageSize.value }
     if (dateRange.value) {
       params.date_from = dateRange.value[0]
       params.date_to = dateRange.value[1]
     }
-    tableData.value = await getAllBookings(params)
+    const res = await getAllBookings(params)
+    tableData.value = res.items
+    total.value = res.total
   } finally {
     loading.value = false
   }
@@ -393,5 +409,10 @@ onMounted(() => {
 }
 .text-muted {
   color: #ccc;
+}
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

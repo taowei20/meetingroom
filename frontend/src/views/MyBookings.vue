@@ -67,6 +67,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination-wrap">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="loadData"
+          @current-change="loadData"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="uploadDialogVisible" title="上传会议记录" width="420px" destroy-on-close>
@@ -111,6 +122,9 @@ const loading = ref(false)
 const uploading = ref(false)
 const tableData = ref([])
 const statusFilter = ref('')
+const currentPage = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 
 const uploadDialogVisible = ref(false)
 const currentBooking = ref({})
@@ -168,7 +182,9 @@ async function downloadFile(row) {
 async function loadData() {
   loading.value = true
   try {
-    tableData.value = await getMyBookingsHistory({ status: statusFilter.value })
+    const res = await getMyBookingsHistory({ status: statusFilter.value, page: currentPage.value, page_size: pageSize.value })
+    tableData.value = res.items
+    total.value = res.total
   } finally {
     loading.value = false
   }
@@ -239,6 +255,11 @@ onMounted(loadData)
 }
 .text-muted {
   color: #ccc;
+}
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 .upload-info {
   margin-bottom: 16px;
