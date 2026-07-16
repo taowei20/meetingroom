@@ -71,7 +71,7 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[20, 50, 100]"
+          :page-sizes="[15, 20, 50, 100]"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="loadData"
@@ -123,7 +123,7 @@ const uploading = ref(false)
 const tableData = ref([])
 const statusFilter = ref('')
 const currentPage = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(15)
 const total = ref(0)
 
 const uploadDialogVisible = ref(false)

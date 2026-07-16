@@ -55,7 +55,7 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[20, 50, 100]"
+          :page-sizes="[15, 20, 50, 100]"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="loadData"
@@ -135,7 +135,7 @@ const submitting = ref(false)
 const tableData = ref([])
 const keyword = ref('')
 const currentPage = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(15)
 const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -301,6 +301,12 @@ onMounted(loadData)
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+:deep(.el-table__header th) {
+  padding: 6px 0;
+}
+:deep(.el-table__body td) {
+  padding: 4px 0;
 }
 .import-tips {
   margin-bottom: 16px;
