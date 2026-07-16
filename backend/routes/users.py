@@ -25,6 +25,9 @@ def list_users():
         return jsonify({"error": "无权限"}), 403
 
     keyword = request.args.get("keyword", "").strip()
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("page_size", 20, type=int)
+
     query = User.query
     if keyword:
         query = query.filter(
@@ -34,8 +37,16 @@ def list_users():
                 User.department.contains(keyword),
             )
         )
-    users = query.order_by(User.id.desc()).all()
-    return jsonify([u.to_dict() for u in users])
+
+    total = query.count()
+    users = query.order_by(User.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    return jsonify({
+        "items": [u.to_dict() for u in users],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })
 
 
 @users_bp.route("/api/users", methods=["POST"])

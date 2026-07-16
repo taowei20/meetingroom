@@ -51,6 +51,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination-wrap">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="loadData"
+          @current-change="loadData"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="460px" destroy-on-close>
@@ -123,6 +134,9 @@ const loading = ref(false)
 const submitting = ref(false)
 const tableData = ref([])
 const keyword = ref('')
+const currentPage = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
@@ -152,7 +166,9 @@ const rules = {
 async function loadData() {
   loading.value = true
   try {
-    tableData.value = await getUsers({ keyword: keyword.value })
+    const res = await getUsers({ keyword: keyword.value, page: currentPage.value, page_size: pageSize.value })
+    tableData.value = res.items
+    total.value = res.total
   } finally {
     loading.value = false
   }
@@ -280,6 +296,11 @@ onMounted(loadData)
   display: flex;
   gap: 10px;
   margin-bottom: 16px;
+}
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 .import-tips {
   margin-bottom: 16px;
