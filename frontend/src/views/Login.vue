@@ -40,7 +40,13 @@ import { ElMessage } from 'element-plus'
 import { login } from '../api/auth'
 import { setToken } from '../utils/auth'
 import { useUserStore } from '../store/user'
-import meetroomImg from '../asserts/meetroom.png'
+import meetroomImg from '../asserts/meetingRoom.webp'
+
+const link = document.createElement('link')
+link.rel = 'preload'
+link.as = 'image'
+link.href = meetroomImg
+document.head.appendChild(link)
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -105,8 +111,13 @@ async function handleLogin() {
 .login-image {
   width: 640px;
   height: auto;
-  object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  background: rgba(255,255,255,0.06);
+  animation: imgFadeIn 0.1s ease-in;
+}
+@keyframes imgFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .left-text {
   text-align: center;
