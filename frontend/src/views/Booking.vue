@@ -466,7 +466,7 @@ const lastSelectedEnd = computed(() => {
   if (!selectedSlots.value.length) return ''
   const lastIdx = timeSlots.indexOf(selectedSlots.value[selectedSlots.value.length - 1])
   const nextIdx = lastIdx + 1
-  return nextIdx < timeSlots.length ? timeSlots[nextIdx] : '22:00'
+  return nextIdx < timeSlots.length ? timeSlots[nextIdx] : '20:00'
 })
 
 function isSlotSelected(roomId, slot) {
@@ -638,7 +638,7 @@ function openBookingDialog() {
   const sorted = [...selectedSlots.value].sort()
   const start = sorted[0]
   const endIdx = timeSlots.indexOf(sorted[sorted.length - 1]) + 1
-  const end = endIdx < timeSlots.length ? timeSlots[endIdx] : '22:00'
+  const end = endIdx < timeSlots.length ? timeSlots[endIdx] : '20:00'
 
   bookingForm.value = {
     room_id: selectedRoom.value.id,
