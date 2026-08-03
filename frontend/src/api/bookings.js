@@ -12,6 +12,10 @@ export function createBooking(data) {
   return request.post('/api/bookings', data)
 }
 
+export function createBatchBookings(data) {
+  return request.post('/api/bookings/batch', data)
+}
+
 export function cancelBooking(id) {
   return request.delete(`/api/bookings/${id}`)
 }

@@ -15,6 +15,9 @@
               <el-option label="已取消" value="cancelled" />
             </el-select>
             <el-button type="primary" @click="loadData">搜索</el-button>
+            <el-button type="success" @click="openBatchDialog">
+              <el-icon><Calendar /></el-icon> 批量预订
+            </el-button>
           </div>
         </div>
       </template>
@@ -157,6 +160,58 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="batchDialogVisible" title="批量预订会议室" width="520px" destroy-on-close>
+      <el-form ref="batchFormRef" :model="batchForm" :rules="batchRules" label-width="90px">
+        <el-form-item label="会议室" prop="room_id">
+          <el-select v-model="batchForm.room_id" placeholder="请选择会议室" style="width: 100%">
+            <el-option v-for="r in rooms" :key="r.id" :label="r.name" :value="r.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="预订人" prop="user_id">
+          <el-select
+            v-model="batchForm.user_id"
+            filterable
+            remote
+            :remote-method="searchUsers"
+            :loading="userLoading"
+            placeholder="搜索用户"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="u in userOptions"
+              :key="u.id"
+              :label="`${u.name} (${u.username})`"
+              :value="u.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="日期范围" prop="date_range">
+          <el-date-picker
+            v-model="batchForm.date_range"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="开始时间" prop="start_time">
+          <el-time-select v-model="batchForm.start_time" :start="'08:00'" :step="'00:30'" :end="'22:00'" placeholder="请选择" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="结束时间" prop="end_time">
+          <el-time-select v-model="batchForm.end_time" :start="'08:00'" :step="'00:30'" :end="'22:00'" placeholder="请选择" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="会议内容">
+          <el-input v-model="batchForm.meeting_content" placeholder="请输入会议内容" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="batchSubmitting" @click="handleBatchSubmit">开始批量预订</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="systemDialogVisible" :title="isSystemEdit ? '编辑系统预订' : '新增系统预订'" width="460px" destroy-on-close>
       <el-form ref="systemFormRef" :model="systemForm" :rules="systemRules" label-width="90px">
         <el-form-item label="会议室" prop="room_id">
@@ -203,10 +258,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, Calendar } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
-import { getAllBookings, cancelBooking, transferBooking, getUserOptions, getSystemBookings, createSystemBooking, updateSystemBooking, deleteSystemBooking } from '../api/bookings'
+import { getAllBookings, cancelBooking, transferBooking, getUserOptions, getSystemBookings, createSystemBooking, updateSystemBooking, deleteSystemBooking, createBatchBookings } from '../api/bookings'
 import { getRooms } from '../api/rooms'
+import { useUserStore } from '../store/user'
+
+const userStore = useUserStore()
 
 const loading = ref(false)
 const tableData = ref([])
@@ -233,6 +291,27 @@ const isSystemEdit = ref(false)
 const systemEditId = ref(null)
 const systemFormRef = ref(null)
 const rooms = ref([])
+
+const batchDialogVisible = ref(false)
+const batchSubmitting = ref(false)
+const batchFormRef = ref(null)
+
+const batchForm = ref({
+  room_id: null,
+  user_id: null,
+  date_range: null,
+  start_time: '',
+  end_time: '',
+  meeting_content: '',
+})
+
+const batchRules = {
+  room_id: [{ required: true, message: '请选择会议室', trigger: 'change' }],
+  user_id: [{ required: true, message: '请选择预订人', trigger: 'change' }],
+  date_range: [{ required: true, message: '请选择日期范围', trigger: 'change' }],
+  start_time: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  end_time: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+}
 
 const weekdayOptions = [
   { value: 1, label: '星期一' },
@@ -389,6 +468,55 @@ async function handleDeleteSystem(id) {
   await deleteSystemBooking(id)
   ElMessage.success('删除成功')
   loadSystemData()
+}
+
+function openBatchDialog() {
+  batchForm.value = {
+    room_id: null,
+    user_id: userStore?.userId || null,
+    date_range: null,
+    start_time: '',
+    end_time: '',
+    meeting_content: '',
+  }
+  batchDialogVisible.value = true
+  searchUsers('')
+}
+
+async function handleBatchSubmit() {
+  const valid = await batchFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  if (batchForm.value.start_time >= batchForm.value.end_time) {
+    ElMessage.error('结束时间必须大于开始时间')
+    return
+  }
+
+  batchSubmitting.value = true
+  try {
+    const res = await createBatchBookings({
+      room_id: batchForm.value.room_id,
+      user_id: batchForm.value.user_id,
+      start_date: batchForm.value.date_range[0],
+      end_date: batchForm.value.date_range[1],
+      start_time: batchForm.value.start_time,
+      end_time: batchForm.value.end_time,
+      meeting_content: batchForm.value.meeting_content,
+    })
+    if (res.conflicts && res.conflicts.length > 0) {
+      const detail = res.conflicts.map(c => `${c.date}(${c.reason})`).join('，')
+      ElMessage.warning(`${res.message}。冲突日期: ${detail}`)
+    } else {
+      ElMessage.success(res.message)
+    }
+    batchDialogVisible.value = false
+    loadData()
+  } catch (e) {
+    const msg = e.response?.data?.error || '批量预订失败'
+    ElMessage.error(msg)
+  } finally {
+    batchSubmitting.value = false
+  }
 }
 
 onMounted(() => {

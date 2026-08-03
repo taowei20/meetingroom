@@ -204,6 +204,111 @@ def create_booking():
     return jsonify(booking.to_dict()), 201
 
 
+@bookings_bp.route("/api/bookings/batch", methods=["POST"])
+@jwt_required()
+def create_batch_bookings():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user or not user.is_admin:
+        return jsonify({"error": "无权限"}), 403
+
+    data = request.get_json()
+    room_id = data.get("room_id")
+    start_date_str = data.get("start_date")
+    end_date_str = data.get("end_date")
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
+    meeting_content = data.get("meeting_content", "")
+    book_user_id = data.get("user_id", user_id)
+
+    if not room_id or not start_date_str or not end_date_str or not start_time or not end_time:
+        return jsonify({"error": "缺少必填参数"}), 400
+
+    try:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"error": "日期格式错误"}), 400
+
+    if start_date > end_date:
+        return jsonify({"error": "开始日期不能晚于结束日期"}), 400
+
+    if start_time >= end_time:
+        return jsonify({"error": "结束时间必须大于开始时间"}), 400
+
+    if (end_date - start_date).days > 60:
+        return jsonify({"error": "日期范围不能超过60天"}), 400
+
+    room = Room.query.get(room_id)
+    if not room or not room.is_active:
+        return jsonify({"error": "会议室不存在或已停用"}), 400
+
+    book_user = User.query.get(book_user_id)
+    if not book_user or not book_user.is_active:
+        return jsonify({"error": "预订人不存在或已禁用"}), 400
+
+    created = 0
+    skipped = 0
+    conflicts = []
+
+    current_date = start_date
+    while current_date <= end_date:
+        conflict = Booking.query.filter(
+            and_(
+                Booking.room_id == room_id,
+                Booking.booking_date == current_date,
+                Booking.status == "active",
+                Booking.start_time < end_time,
+                Booking.end_time > start_time,
+            )
+        ).first()
+
+        js_weekday = (current_date.weekday() + 1) % 7
+        sys_conflict = None
+        sys_bookings = SystemBooking.query.filter(
+            and_(
+                SystemBooking.room_id == room_id,
+                SystemBooking.weekday == js_weekday,
+                SystemBooking.is_active == True,
+                SystemBooking.start_time < end_time,
+                SystemBooking.end_time > start_time,
+            )
+        ).all()
+        for sc in sys_bookings:
+            if not sc.is_date_ignored(current_date):
+                sys_conflict = sc
+                break
+
+        if conflict:
+            conflicts.append({"date": current_date.isoformat(), "reason": "该时间段已被预订"})
+            skipped += 1
+        elif sys_conflict:
+            conflicts.append({"date": current_date.isoformat(), "reason": "系统预订时段"})
+            skipped += 1
+        else:
+            booking = Booking(
+                room_id=room_id,
+                user_id=book_user_id,
+                booking_date=current_date,
+                start_time=start_time,
+                end_time=end_time,
+                status="active",
+                meeting_content=meeting_content,
+            )
+            db.session.add(booking)
+            created += 1
+
+        current_date += timedelta(days=1)
+
+    db.session.commit()
+    return jsonify({
+        "message": f"批量预订完成: 成功{created}条, 跳过{skipped}条",
+        "created": created,
+        "skipped": skipped,
+        "conflicts": conflicts,
+    })
+
+
 @bookings_bp.route("/api/bookings/<int:booking_id>", methods=["DELETE"])
 @jwt_required()
 def cancel_booking(booking_id):
