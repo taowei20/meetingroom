@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import and_
 from models import db, User, Room, SystemBooking
+import json
 
 system_bookings_bp = Blueprint("system_bookings", __name__)
 
@@ -12,6 +13,14 @@ def require_admin():
     if not user or not user.is_admin:
         return None
     return user
+
+
+def parse_ignore_dates(raw):
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(d) for d in raw]
+    return []
 
 
 @system_bookings_bp.route("/api/system-bookings", methods=["GET"])
@@ -40,6 +49,7 @@ def create_system_booking():
     start_time = data.get("start_time")
     end_time = data.get("end_time")
     remark = data.get("remark", "系统预订")
+    ignore_dates = parse_ignore_dates(data.get("ignore_dates"))
 
     if not room_id or weekday is None or not start_time or not end_time:
         return jsonify({"error": "缺少必填参数"}), 400
@@ -71,6 +81,7 @@ def create_system_booking():
         end_time=end_time,
         remark=remark,
     )
+    booking.set_ignore_dates(ignore_dates)
     db.session.add(booking)
     db.session.commit()
     return jsonify(booking.to_dict()), 201
@@ -94,6 +105,8 @@ def update_system_booking(booking_id):
     booking.end_time = data.get("end_time", booking.end_time)
     booking.remark = data.get("remark", booking.remark)
     booking.is_active = data.get("is_active", booking.is_active)
+    if "ignore_dates" in data:
+        booking.set_ignore_dates(parse_ignore_dates(data.get("ignore_dates")))
     db.session.commit()
     return jsonify(booking.to_dict())
 

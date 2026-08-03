@@ -119,10 +119,27 @@ class SystemBooking(db.Model):
     start_time = db.Column(db.String(5), nullable=False)
     end_time = db.Column(db.String(5), nullable=False)
     remark = db.Column(db.String(255), default="系统预订")
+    ignore_dates = db.Column(db.Text, default="[]")
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     room = db.relationship("Room", backref="system_bookings")
+
+    def get_ignore_dates(self):
+        import json
+        try:
+            return json.loads(self.ignore_dates or "[]")
+        except (ValueError, TypeError):
+            return []
+
+    def set_ignore_dates(self, dates):
+        import json
+        self.ignore_dates = json.dumps(dates or [])
+
+    def is_date_ignored(self, target_date):
+        if not target_date:
+            return False
+        return target_date.isoformat() in self.get_ignore_dates()
 
     def to_dict(self):
         return {
@@ -132,6 +149,7 @@ class SystemBooking(db.Model):
             "start_time": self.start_time,
             "end_time": self.end_time,
             "remark": self.remark,
+            "ignore_dates": self.get_ignore_dates(),
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "room_name": self.room.name if self.room else None,

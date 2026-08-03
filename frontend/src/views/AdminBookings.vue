@@ -92,7 +92,17 @@
                 {{ row.start_time }} - {{ row.end_time }}
               </template>
             </el-table-column>
-            <el-table-column prop="remark" label="备注" min-width="150" />
+            <el-table-column prop="remark" label="备注" min-width="120" />
+            <el-table-column label="忽略日期" min-width="180">
+              <template #default="{ row }">
+                <template v-if="row.ignore_dates && row.ignore_dates.length">
+                  <el-tooltip :content="row.ignore_dates.join('、')">
+                    <span class="ignore-dates-text">{{ row.ignore_dates.length }} 天</span>
+                  </el-tooltip>
+                </template>
+                <span v-else class="text-muted">-</span>
+              </template>
+            </el-table-column>
             <el-table-column label="状态" width="90">
               <template #default="{ row }">
                 <el-tag :type="row.is_active ? 'success' : 'info'">
@@ -168,6 +178,16 @@
         <el-form-item label="备注">
           <el-input v-model="systemForm.remark" placeholder="请输入备注" />
         </el-form-item>
+        <el-form-item label="忽略日期">
+          <el-date-picker
+            v-model="systemForm.ignore_dates"
+            type="dates"
+            value-format="YYYY-MM-DD"
+            format="YYYY-MM-DD"
+            placeholder="选择需要忽略的日期"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item v-if="isSystemEdit" label="状态">
           <el-switch v-model="systemForm.is_active" active-text="启用" inactive-text="停用" />
         </el-form-item>
@@ -234,6 +254,7 @@ const systemForm = ref({
   start_time: '',
   end_time: '',
   remark: '系统预订',
+  ignore_dates: [],
   is_active: true,
 })
 
@@ -330,11 +351,11 @@ function openSystemDialog(row) {
   if (row) {
     isSystemEdit.value = true
     systemEditId.value = row.id
-    systemForm.value = { ...row }
+    systemForm.value = { ...row, ignore_dates: row.ignore_dates ? [...row.ignore_dates] : [] }
   } else {
     isSystemEdit.value = false
     systemEditId.value = null
-    systemForm.value = { room_id: null, weekday: null, start_time: '', end_time: '', remark: '系统预订', is_active: true }
+    systemForm.value = { room_id: null, weekday: null, start_time: '', end_time: '', remark: '系统预订', ignore_dates: [], is_active: true }
   }
   systemDialogVisible.value = true
 }
@@ -409,6 +430,10 @@ onMounted(() => {
 }
 .text-muted {
   color: #ccc;
+}
+.ignore-dates-text {
+  color: #e6a23c;
+  cursor: pointer;
 }
 .pagination-wrap {
   display: flex;

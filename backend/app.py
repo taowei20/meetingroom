@@ -55,7 +55,12 @@ def migrate_db():
         columns = [col['name'] for col in inspector.get_columns('users')]
         if 'is_active' not in columns:
             db.session.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
-    
+
+    if 'system_bookings' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('system_bookings')]
+        if 'ignore_dates' not in columns:
+            db.session.execute(text("ALTER TABLE system_bookings ADD COLUMN ignore_dates TEXT DEFAULT '[]'"))
+
     db.session.commit()
 
 

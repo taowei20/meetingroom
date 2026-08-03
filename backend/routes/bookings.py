@@ -46,6 +46,8 @@ def list_bookings():
 
     result = [b.to_dict() for b in bookings]
     for sb in system_bookings:
+        if sb.is_date_ignored(target_date):
+            continue
         result.append({
             "id": f"sys_{sb.id}",
             "room_id": sb.room_id,
@@ -105,6 +107,8 @@ def list_month_bookings():
             )
         ).all()
         for sb in system_bookings:
+            if sb.is_date_ignored(d):
+                continue
             result.append({
                 "id": f"sys_{sb.id}_{day}",
                 "room_id": sb.room_id,
@@ -183,7 +187,7 @@ def create_booking():
         )
     ).first()
 
-    if system_conflict:
+    if system_conflict and not system_conflict.is_date_ignored(booking_date):
         return jsonify({"error": "该时间段为系统预订时段，无法预订"}), 400
 
     booking = Booking(
