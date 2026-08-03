@@ -197,10 +197,10 @@
           />
         </el-form-item>
         <el-form-item label="开始时间" prop="start_time">
-          <el-time-select v-model="batchForm.start_time" :start="'08:00'" :step="'00:30'" :end="'22:00'" placeholder="请选择" style="width: 100%" />
+          <el-time-select v-model="batchForm.start_time" :start="'09:00'" :step="'01:00'" :end="'20:00'" placeholder="请选择" style="width: 100%" />
         </el-form-item>
         <el-form-item label="结束时间" prop="end_time">
-          <el-time-select v-model="batchForm.end_time" :start="'08:00'" :step="'00:30'" :end="'22:00'" placeholder="请选择" style="width: 100%" />
+          <el-time-select v-model="batchForm.end_time" :start="'09:00'" :step="'01:00'" :end="'20:00'" placeholder="请选择" style="width: 100%" />
         </el-form-item>
         <el-form-item label="会议内容">
           <el-input v-model="batchForm.meeting_content" placeholder="请输入会议内容" />
