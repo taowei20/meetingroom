@@ -32,4 +32,4 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
-CMD ["sh", "-c", "nginx && python /app/backend/app.py"]
+CMD ["sh", "-c", "nginx && cd /app/backend && gunicorn --workers 4 --threads 4 --timeout 60 --keep-alive 5 --access-logfile - --error-logfile - -b 127.0.0.1:5000 app:app"]

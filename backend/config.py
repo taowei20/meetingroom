@@ -26,10 +26,24 @@ _yaml_config = load_yaml_config()
 
 
 class Config:
-    SECRET_KEY = _yaml_config['server']["SECRET_KEY"] or secrets.token_hex(32)
+    SECRET_KEY = os.environ.get(
+        "SECRET_KEY",
+        _yaml_config.get('server', {}).get('SECRET_KEY') or secrets.token_hex(32),
+    )
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, _yaml_config['database']['path'])}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = _yaml_config['jwt']["JWT_SECRET_KEY"] or secrets.token_hex(32)
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {
+            "timeout": 30,
+            "check_same_thread": False,
+        },
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+    }
+    JWT_SECRET_KEY = os.environ.get(
+        "JWT_SECRET_KEY",
+        _yaml_config.get('jwt', {}).get('JWT_SECRET_KEY') or secrets.token_hex(32),
+    )
     JWT_ACCESS_TOKEN_EXPIRES = _yaml_config['jwt']['access_token_expires']
     MAX_CONTENT_LENGTH = _yaml_config['upload']['max_content_length']
     ALLOWED_EXTENSIONS = _yaml_config['upload']['allowed_extensions']

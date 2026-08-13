@@ -57,6 +57,11 @@ class Room(db.Model):
 
 class Booking(db.Model):
     __tablename__ = "bookings"
+    __table_args__ = (
+        db.Index("ix_bookings_room_date", "room_id", "booking_date", "status"),
+        db.Index("ix_bookings_user_date", "user_id", "booking_date"),
+        db.Index("ix_bookings_date_status", "booking_date", "status"),
+    )
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False)
@@ -93,6 +98,9 @@ class Booking(db.Model):
 
 class LoginLog(db.Model):
     __tablename__ = "login_logs"
+    __table_args__ = (
+        db.Index("ix_login_logs_time", "login_time"),
+    )
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(50), nullable=False)
@@ -112,6 +120,9 @@ class LoginLog(db.Model):
 
 class SystemBooking(db.Model):
     __tablename__ = "system_bookings"
+    __table_args__ = (
+        db.Index("ix_sys_room_weekday", "room_id", "weekday", "is_active"),
+    )
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False)

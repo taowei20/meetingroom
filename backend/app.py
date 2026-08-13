@@ -2,6 +2,7 @@ from datetime import timedelta
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from sqlalchemy import event
 from config import Config, get_server_config
 from models import db, User
 from werkzeug.security import generate_password_hash
@@ -13,10 +14,24 @@ def create_app():
     app.config.from_object(Config)
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
+    app.config["SQLALCHEMY_SESSION_OPTIONS"] = {"expire_on_commit": False}
 
     CORS(app, supports_credentials=True, origins=Config.CORS_ORIGINS)
     JWTManager(app)
     db.init_app(app)
+
+    with app.app_context():
+        @event.listens_for(db.engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            try:
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA busy_timeout=30000")
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
+            except Exception:
+                pass
 
     from routes.auth import auth_bp
     from routes.users import users_bp
@@ -60,6 +75,24 @@ def migrate_db():
         columns = [col['name'] for col in inspector.get_columns('system_bookings')]
         if 'ignore_dates' not in columns:
             db.session.execute(text("ALTER TABLE system_bookings ADD COLUMN ignore_dates TEXT DEFAULT '[]'"))
+
+    index_names = {ix['name'] for ix in inspector.get_indexes('bookings')}
+    if 'ix_bookings_room_date' not in index_names:
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_bookings_room_date ON bookings (room_id, booking_date, status)"))
+    if 'ix_bookings_user_date' not in index_names:
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_bookings_user_date ON bookings (user_id, booking_date)"))
+    if 'ix_bookings_date_status' not in index_names:
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_bookings_date_status ON bookings (booking_date, status)"))
+
+    if 'login_logs' in inspector.get_table_names():
+        ll_indexes = {ix['name'] for ix in inspector.get_indexes('login_logs')}
+        if 'ix_login_logs_time' not in ll_indexes:
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_login_logs_time ON login_logs (login_time)"))
+
+    if 'system_bookings' in inspector.get_table_names():
+        sb_indexes = {ix['name'] for ix in inspector.get_indexes('system_bookings')}
+        if 'ix_sys_room_weekday' not in sb_indexes:
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_sys_room_weekday ON system_bookings (room_id, weekday, is_active)"))
 
     db.session.commit()
 

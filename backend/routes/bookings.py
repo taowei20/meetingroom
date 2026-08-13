@@ -5,6 +5,7 @@ from datetime import datetime, date, timedelta
 from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 from models import db, User, Room, Booking, SystemBooking
 from config import Config
@@ -28,7 +29,9 @@ def list_bookings():
     else:
         target_date = date.today()
 
-    bookings = Booking.query.filter(
+    bookings = Booking.query.options(
+        joinedload(Booking.room), joinedload(Booking.user)
+    ).filter(
         and_(
             Booking.booking_date == target_date,
             Booking.status == "active",
@@ -87,7 +90,9 @@ def list_month_bookings():
     start_date = date(year, month, 1)
     end_date = date(year, month, last_day)
 
-    bookings = Booking.query.filter(
+    bookings = Booking.query.options(
+        joinedload(Booking.room), joinedload(Booking.user)
+    ).filter(
         and_(
             Booking.booking_date >= start_date,
             Booking.booking_date <= end_date,
@@ -97,16 +102,20 @@ def list_month_bookings():
 
     result = [b.to_dict() for b in bookings]
 
+    active_system_bookings = SystemBooking.query.options(
+        joinedload(SystemBooking.room)
+    ).filter(
+        SystemBooking.is_active == True
+    ).all()
+
+    system_by_weekday = {}
+    for sb in active_system_bookings:
+        system_by_weekday.setdefault(sb.weekday, []).append(sb)
+
     for day in range(1, last_day + 1):
         d = date(year, month, day)
         js_weekday = (d.weekday() + 1) % 7
-        system_bookings = SystemBooking.query.filter(
-            and_(
-                SystemBooking.weekday == js_weekday,
-                SystemBooking.is_active == True,
-            )
-        ).all()
-        for sb in system_bookings:
+        for sb in system_by_weekday.get(js_weekday, []):
             if sb.is_date_ignored(d):
                 continue
             result.append({
@@ -331,7 +340,9 @@ def cancel_booking(booking_id):
 @jwt_required()
 def my_bookings():
     user_id = int(get_jwt_identity())
-    bookings = Booking.query.filter_by(
+    bookings = Booking.query.options(
+        joinedload(Booking.room), joinedload(Booking.user)
+    ).filter_by(
         user_id=user_id, status="active"
     ).order_by(
         Booking.booking_date.desc(), Booking.start_time.asc()
@@ -352,7 +363,9 @@ def my_bookings_history():
         query = query.filter_by(status=status)
 
     total = query.count()
-    bookings = query.order_by(
+    bookings = query.options(
+        joinedload(Booking.room), joinedload(Booking.user)
+    ).order_by(
         Booking.booking_date.desc(), Booking.start_time.desc()
     ).offset((page - 1) * page_size).limit(page_size).all()
 
@@ -409,7 +422,9 @@ def all_bookings():
             pass
 
     total = query.count()
-    bookings = query.order_by(
+    bookings = query.options(
+        joinedload(Booking.room), joinedload(Booking.user)
+    ).order_by(
         Booking.booking_date.desc(), Booking.start_time.desc()
     ).offset((page - 1) * page_size).limit(page_size).all()
 
@@ -535,7 +550,9 @@ def stats_overview():
 
     total_bookings = Booking.query.filter_by(status="active").count()
 
-    recent_bookings = Booking.query.filter(
+    recent_bookings = Booking.query.options(
+        joinedload(Booking.room), joinedload(Booking.user)
+    ).filter(
         and_(
             Booking.booking_date >= today,
             Booking.status == "active",
@@ -544,11 +561,23 @@ def stats_overview():
         Booking.booking_date.asc(), Booking.start_time.asc()
     ).limit(10).all()
 
+    from sqlalchemy import func
+    week_start = today
+    week_end = today + timedelta(days=6)
+    counts = dict(
+        db.session.query(
+            Booking.booking_date, func.count(Booking.id)
+        ).filter(
+            Booking.booking_date >= week_start,
+            Booking.booking_date <= week_end,
+            Booking.status == "active",
+        ).group_by(Booking.booking_date).all()
+    )
+
     week_data = []
     for i in range(7):
         d = date.fromordinal(today.toordinal() + i)
-        count = Booking.query.filter_by(booking_date=d, status="active").count()
-        week_data.append({"date": d.isoformat(), "count": count})
+        week_data.append({"date": d.isoformat(), "count": counts.get(d, 0)})
 
     return jsonify({
         "today_count": today_count,
