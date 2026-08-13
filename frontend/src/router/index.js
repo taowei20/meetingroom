@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken } from '../utils/auth'
+import { getToken, setToken } from '../utils/auth'
 import { useUserStore } from '../store/user'
+import { getCurrentUser } from '../api/auth'
 
 const routes = [
   {
@@ -56,6 +57,12 @@ const routes = [
         meta: { title: '登录日志', admin: true },
       },
       {
+        path: 'api-docs',
+        name: 'ApiDocs',
+        component: () => import('../views/ApiDocs.vue'),
+        meta: { title: 'API接口' },
+      },
+      {
         path: 'change-password',
         name: 'ChangePassword',
         component: () => import('../views/ChangePassword.vue'),
@@ -76,7 +83,25 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlToken = urlParams.get('token')
+  const cleanPath = window.location.pathname + window.location.hash
+
+  if (urlToken) {
+    setToken(urlToken)
+    try {
+      const user = await getCurrentUser()
+      const userStore = useUserStore()
+      userStore.setUser(user)
+      window.history.replaceState({}, '', cleanPath)
+      return next('/')
+    } catch (e) {
+      window.history.replaceState({}, '', cleanPath)
+      return next('/login')
+    }
+  }
+
   const token = getToken()
   if (to.path !== '/login' && !token) {
     next('/login')

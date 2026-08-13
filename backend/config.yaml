@@ -36,3 +36,7 @@ upload:
 jwt:
   access_token_expires: 86400  # 24小时（秒）
   JWT_SECRET_KEY: "uns-is498wernkasdfCd2341234Kd8xw"
+
+# 前端地址（/api/auth/verify 校验成功后 302 跳转目标；留空则跳转同源首页）
+frontend:
+  url: ""

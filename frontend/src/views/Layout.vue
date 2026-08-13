@@ -42,6 +42,10 @@
           <el-icon><Clock /></el-icon>
           <template #title>登录日志</template>
         </el-menu-item>
+        <el-menu-item index="/api-docs">
+          <el-icon><Document /></el-icon>
+          <template #title>API接口</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -86,7 +90,7 @@ import { useUserStore } from '../store/user'
 import { ElMessageBox } from 'element-plus'
 import {
   Odometer, User, OfficeBuilding, Calendar, List, DataAnalysis,
-  Fold, Expand, UserFilled, ArrowDown, Clock,
+  Fold, Expand, UserFilled, ArrowDown, Clock, Document,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

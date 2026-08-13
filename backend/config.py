@@ -49,6 +49,10 @@ class Config:
     ALLOWED_EXTENSIONS = _yaml_config['upload']['allowed_extensions']
     UPLOAD_FOLDER = os.path.join(BASE_DIR, _yaml_config['upload']['folder'])
     CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+    FRONTEND_URL = os.environ.get(
+        "FRONTEND_URL",
+        _yaml_config.get('frontend', {}).get('url', ''),
+    ).rstrip("/")
 
 
 def get_server_config():

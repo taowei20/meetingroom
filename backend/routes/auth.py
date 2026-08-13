@@ -1,6 +1,9 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, redirect
+from flask_jwt_extended import (
+    create_access_token, jwt_required, get_jwt_identity, decode_token,
+)
 from werkzeug.security import check_password_hash, generate_password_hash
+from config import Config
 from models import db, User, LoginLog
 
 auth_bp = Blueprint("auth", __name__)
@@ -44,6 +47,32 @@ def login():
         "token": access_token,
         "user": user.to_dict(),
     })
+
+
+@auth_bp.route("/api/auth/verify", methods=["GET"])
+def verify_token():
+    token = request.args.get("token", "").strip()
+    if token.lower().startswith("bearer"):
+        token = token[len("bearer"):].strip()
+    if not token:
+        return jsonify({"error": "缺少token"}), 401
+
+    try:
+        payload = decode_token(token)
+        user_id = int(payload["sub"])
+    except Exception:
+        return jsonify({"error": "token无效或已过期"}), 401
+
+    user = User.query.get(user_id)
+    if not user or not user.is_active:
+        return jsonify({"error": "用户不存在或已禁用"}), 401
+
+    frontend_url = getattr(Config, "FRONTEND_URL", "").rstrip("/")
+    if frontend_url:
+        target = f"{frontend_url}/?token={token}"
+    else:
+        target = f"/?token={token}"
+    return redirect(target)
 
 
 @auth_bp.route("/api/auth/password", methods=["PUT"])
