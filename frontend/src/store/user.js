@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getUser, setUser, removeUser, removeToken } from '../utils/auth'
+import { getUser, setUser, clearAllAuth } from '../utils/auth'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -18,8 +18,7 @@ export const useUserStore = defineStore('user', {
     },
     logout() {
       this.user = null
-      removeUser()
-      removeToken()
+      clearAllAuth()
     },
     updateUser(data) {
       this.user = { ...this.user, ...data }

@@ -1,7 +1,8 @@
 import axios from 'axios'
-import { getToken, removeToken, removeUser } from '../utils/auth'
+import { getToken, clearAllAuth } from '../utils/auth'
 import { ElMessage } from 'element-plus'
 import router from '../router'
+import { isMobile } from '../utils/device'
 
 const request = axios.create({
   baseURL: '',
@@ -24,9 +25,12 @@ request.interceptors.response.use(
   (error) => {
     const msg = error.response?.data?.error || error.message || '请求失败'
     if (error.response?.status === 401) {
-      removeToken()
-      removeUser()
-      router.push('/login')
+      clearAllAuth()
+      if (isMobile()) {
+        router.push('/m/login')
+      } else {
+        router.push('/login')
+      }
       ElMessage.error('登录已过期/或用户名密码错误，请重新登录')
     } else {
       ElMessage.error(msg)

@@ -18,3 +18,9 @@ app.use(pinia)
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 app.mount('#app')
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}

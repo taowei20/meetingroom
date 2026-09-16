@@ -70,6 +70,8 @@ def migrate_db():
         columns = [col['name'] for col in inspector.get_columns('users')]
         if 'is_active' not in columns:
             db.session.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+        if 'mcp_auth_code' not in columns:
+            db.session.execute(text("ALTER TABLE users ADD COLUMN mcp_auth_code VARCHAR(64) DEFAULT NULL"))
 
     if 'system_bookings' in inspector.get_table_names():
         columns = [col['name'] for col in inspector.get_columns('system_bookings')]

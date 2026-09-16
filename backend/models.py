@@ -15,6 +15,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    mcp_auth_code = db.Column(db.String(64), unique=True, nullable=True, default=None)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     bookings = db.relationship("Booking", backref="user", lazy=True)
@@ -28,6 +29,7 @@ class User(db.Model):
             "phone": self.phone,
             "is_admin": self.is_admin,
             "is_active": self.is_active,
+            "has_mcp_code": self.mcp_auth_code is not None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

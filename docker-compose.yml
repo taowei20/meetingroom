@@ -6,6 +6,7 @@ services:
     container_name: meeting-room
     ports:
       - "80:80"
+      - "8080:8080"
     volumes:
       - ./database:/app/database
       - ./backend/uploads:/app/uploads

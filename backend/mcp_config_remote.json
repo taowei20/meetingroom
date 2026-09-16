@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "meeting-room": {
+      "url": "http://<server-ip>:8080/mcp",
+      "env": {
+        "MCP_AUTH_CODE": "在此填入您的MCP授权码"
+      }
+    }
+  }
+}

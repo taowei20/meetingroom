@@ -1,4 +1,6 @@
 #构建
 docker build . -t tw/meetingroom:latest
 
-docker save tw/meetingroom > mr.tar
+#docker save tw/meetingroom > mr.tar
+#最好用参数,不要用重定向的格式, 否则在Powershell下容易出问题
+docker save -o mr.tar tw/meetingroom

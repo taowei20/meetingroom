@@ -38,7 +38,7 @@ import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { login } from '../api/auth'
-import { setToken } from '../utils/auth'
+import { setToken, setLoginTime } from '../utils/auth'
 import { useUserStore } from '../store/user'
 import meetroomImg from '../asserts/meetingRoom.webp'
 
@@ -66,6 +66,7 @@ async function handleLogin() {
   try {
     const res = await login(form.value)
     setToken(res.token)
+    setLoginTime()
     userStore.setUser(res.user)
     ElMessage.success('登录成功')
     router.push('/')

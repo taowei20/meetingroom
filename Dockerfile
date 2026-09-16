@@ -19,7 +19,9 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ backend/
+COPY backend/entrypoint.sh /app/backend/entrypoint.sh
 #COPY pyinstaller.spec .
+RUN chmod +x /app/backend/entrypoint.sh
 
 #RUN pip install --no-cache-dir pyinstaller==6.21.0 && \
 #    pyinstaller pyinstaller.spec --clean && \
@@ -30,6 +32,6 @@ COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80
+EXPOSE 80 8080
 
-CMD ["sh", "-c", "nginx && cd /app/backend && gunicorn --workers 4 --threads 4 --timeout 60 --keep-alive 5 --access-logfile - --error-logfile - -b 127.0.0.1:5000 app:app"]
+CMD ["sh", "/app/backend/entrypoint.sh"]

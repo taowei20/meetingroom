@@ -5,6 +5,7 @@ from flask_jwt_extended import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from config import Config
 from models import db, User, LoginLog
+import secrets
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -149,4 +150,77 @@ def list_login_logs():
         "total": total,
         "page": page,
         "page_size": page_size,
+    })
+
+
+# ──────────────────────────────────────────────
+# MCP 授权码管理
+# ──────────────────────────────────────────────
+
+
+@auth_bp.route("/api/auth/mcp-code", methods=["GET"])
+@jwt_required()
+def get_mcp_code():
+    """获取当前用户的 MCP 授权码"""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "用户不存在"}), 404
+    return jsonify({
+        "mcp_auth_code": user.mcp_auth_code,
+        "has_mcp_code": user.mcp_auth_code is not None,
+    })
+
+
+@auth_bp.route("/api/auth/mcp-code", methods=["POST"])
+@jwt_required()
+def generate_mcp_code():
+    """生成或刷新 MCP 授权码"""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "用户不存在"}), 404
+
+    user.mcp_auth_code = secrets.token_urlsafe(32)
+    db.session.commit()
+    return jsonify({
+        "mcp_auth_code": user.mcp_auth_code,
+        "message": "MCP授权码已生成，请妥善保管",
+    })
+
+
+@auth_bp.route("/api/auth/mcp-code", methods=["DELETE"])
+@jwt_required()
+def delete_mcp_code():
+    """删除 MCP 授权码"""
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "用户不存在"}), 404
+
+    user.mcp_auth_code = None
+    db.session.commit()
+    return jsonify({"message": "MCP授权码已删除"})
+
+
+@auth_bp.route("/api/auth/mcp-verify", methods=["POST"])
+def mcp_verify():
+    """MCP 服务端验证授权码，返回用户信息和 JWT Token"""
+    data = request.get_json()
+    auth_code = data.get("auth_code", "").strip()
+
+    if not auth_code:
+        return jsonify({"error": "授权码不能为空"}), 400
+
+    user = User.query.filter_by(mcp_auth_code=auth_code).first()
+    if not user:
+        return jsonify({"error": "授权码无效"}), 401
+
+    if not user.is_active:
+        return jsonify({"error": "账号已被禁用"}), 403
+
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({
+        "token": access_token,
+        "user": user.to_dict(),
     })
