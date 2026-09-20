@@ -7,6 +7,8 @@ services:
     ports:
       - "80:80"
       - "8080:8080"
+    environment:
+      - TZ=Asia/Shanghai
     volumes:
       - ./database:/app/database
       - ./backend/uploads:/app/uploads
