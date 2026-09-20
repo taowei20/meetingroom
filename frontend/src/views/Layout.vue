@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-aside :width="isCollapse ? '64px' : '180px'" class="layout-aside">
       <div class="logo-area">
-        <span v-if="!isCollapse">紫软会议室预订系统</span>
+        <span v-if="!isCollapse">会议室预订系统</span>
         <span v-else>会</span>
       </div>
       <el-menu

@@ -4,7 +4,7 @@
       <div class="login-left">
         <div class="left-content">
           <div class="left-text">
-            <h2>紫软会议室预订系统</h2>
+            <h2>会议室预订系统</h2>
           </div>
           <img :src="meetroomImg" alt="meeting room" class="login-image" />
         </div>

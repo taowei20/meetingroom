@@ -5,7 +5,7 @@
         <el-icon :size="40" color="#fff"><OfficeBuilding /></el-icon>
       </div>
       <h1 class="app-title">会议室预订</h1>
-      <p class="app-subtitle">紫软会议室预订管理系统</p>
+      <p class="app-subtitle">会议室预订管理系统</p>
     </div>
     <div class="login-form">
       <el-input

@@ -2,15 +2,23 @@
 
 基于 Flask + Vue 3 的全栈会议室预订系统，支持移动端适配、PWA、MCP（AI Agent）接入。
 
+支持管理员指定固定时间部门周会,批量预订等
+
+<img title="" src="resourse/home.png" alt="" width="872"><img title="" src="resourse/booking.png" alt="" width="886"><img title="" src="resourse/mobile2.jpg" alt="" width="255"><img title="" src="resourse/mobile.jpg" alt="" width="256" data-align="inline">
+
+
+
+
+
 ## 技术栈
 
-| 层 | 技术 |
-|----|------|
-| 前端 | Vue 3 + Vite + Element Plus + ECharts |
-| 后端 | Flask + SQLAlchemy |
-| 数据库 | SQLite |
-| 反向代理 | Nginx（Docker 单容器部署） |
-| AI 接入 | MCP (Streamable HTTP) |
+| 层     | 技术                                    |
+| ----- | ------------------------------------- |
+| 前端    | Vue 3 + Vite + Element Plus + ECharts |
+| 后端    | Flask + SQLAlchemy                    |
+| 数据库   | SQLite                                |
+| 反向代理  | Nginx（Docker 单容器部署）                   |
+| AI 接入 | MCP (Streamable HTTP)                 |
 
 ## 目录结构
 
@@ -44,6 +52,7 @@ python app.py
 ```
 
 首次运行会：
+
 - 自动创建 SQLite 数据库 `database/meeting_room.db`
 - 自动初始化会议室等基础数据
 - 生成随机管理员密码并打印到控制台，**请立即登录后修改密码**
@@ -96,6 +105,7 @@ docker build . -t tw/meetingroom
 ```
 
 多阶段构建：
+
 - 阶段一：`node:18-alpine` 编译前端，输出 `frontend/dist`
 - 阶段二：`python:3.11-slim` 安装 Flask 依赖 + Nginx，运行 Flask 与 Nginx
 
@@ -114,6 +124,7 @@ docker compose up -d
 ```
 
 `docker-compose.yml` 说明：
+
 - 映射宿主机 `80` 端口 → 容器 `80` 端口
 - 挂载 `./database` → 容器 `/app/database`（持久化数据库）
 - 挂载 `./backend/uploads` → 容器 `/app/uploads`（持久化上传文件）
@@ -133,15 +144,16 @@ docker compose down        # 停止服务
 
 ### 访问地址
 
-| 环境 | 地址 |
-|------|------|
-| 生产（Docker/Nginx） | `http://<服务器IP>/`（80 端口） |
-| 开发（前端） | `http://localhost:3000` |
-| 后端 API | `http://<服务器IP>/api/`（经 Nginx 代理） |
+| 环境               | 地址                                |
+| ---------------- | --------------------------------- |
+| 生产（Docker/Nginx） | `http://<服务器IP>/`（80 端口）          |
+| 开发（前端）           | `http://localhost:3000`           |
+| 后端 API           | `http://<服务器IP>/api/`（经 Nginx 代理） |
 
 ### 首次登录
 
 1. 查看容器日志获取初始管理员密码：
+   
    ```bash
    docker logs meeting-room | grep "密码"
    ```
@@ -227,22 +239,22 @@ python mcp_server.py
 
 ## 六、环境变量与常用配置
 
-| 变量 / 配置 | 说明 | 默认值 |
-|-------------|------|--------|
-| `CORS_ORIGINS` | CORS 白名单（逗号分隔） | `http://localhost:3000,http://localhost:5173` |
-| `MEETING_ROOM_API_URL` | MCP 服务端调用的后端地址 | `http://127.0.0.1:5000` |
-| `server.port`（config.yaml） | Flask 端口 | `5000` |
-| `jwt.access_token_expires` | Token 有效期（秒） | `86400`（24h） |
-| `upload.max_content_length` | 上传大小限制 | 后端实际限制 50MB |
+| 变量 / 配置                     | 说明             | 默认值                                           |
+| --------------------------- | -------------- | --------------------------------------------- |
+| `CORS_ORIGINS`              | CORS 白名单（逗号分隔） | `http://localhost:3000,http://localhost:5173` |
+| `MEETING_ROOM_API_URL`      | MCP 服务端调用的后端地址 | `http://127.0.0.1:5000`                       |
+| `server.port`（config.yaml）  | Flask 端口       | `5000`                                        |
+| `jwt.access_token_expires`  | Token 有效期（秒）   | `86400`（24h）                                  |
+| `upload.max_content_length` | 上传大小限制         | 后端实际限制 50MB                                   |
 
 ---
 
 ## 七、常见问题
 
-| 问题 | 处理方式 |
-|------|----------|
-| 忘记管理员密码 | 停止服务，删除 `database/meeting_room.db` 后重启（会重新初始化） |
-| 数据库/上传目录不存在 | 首次运行自动创建；Docker 部署时确认挂载目录可写 |
-| 修改后端地址 | 开发环境改 `frontend/vite.config.js`；生产环境改 Nginx 配置 |
-| 移动端不生效 | 确认浏览器窗口 < 768px，PWA 需使用 HTTPS 或 localhost |
-| MCP 提示未配置授权码 | 在 Agent 配置 URL 中添加 `?auth_code=你的授权码` |
+| 问题           | 处理方式                                           |
+| ------------ | ---------------------------------------------- |
+| 忘记管理员密码      | 停止服务，删除 `database/meeting_room.db` 后重启（会重新初始化） |
+| 数据库/上传目录不存在  | 首次运行自动创建；Docker 部署时确认挂载目录可写                    |
+| 修改后端地址       | 开发环境改 `frontend/vite.config.js`；生产环境改 Nginx 配置 |
+| 移动端不生效       | 确认浏览器窗口 < 768px，PWA 需使用 HTTPS 或 localhost      |
+| MCP 提示未配置授权码 | 在 Agent 配置 URL 中添加 `?auth_code=你的授权码`          |
