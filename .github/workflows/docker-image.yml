@@ -52,6 +52,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}} # 主次版本，如 1.0
             type=sha                           # Git commit 的短 SHA 值
             type=ref,event=branch              # 分支名，如 main
+            # 只有当推送到默认分支（如 main/master）时才生成 latest  【关键】显式生成 latest 标签
+            type=raw,value=latest,enable={{is_default_branch}}
 
       # 步骤 5: 构建并推送 Docker 镜像
       # 这是核心步骤，执行实际的 docker build 和 push 操作
