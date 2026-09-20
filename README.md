@@ -6,9 +6,7 @@
 
 <img title="" src="resourse/home.png" alt="" width="872"><img title="" src="resourse/booking.png" alt="" width="886"><img title="" src="resourse/mobile2.jpg" alt="" width="255"><img title="" src="resourse/mobile.jpg" alt="" width="256" data-align="inline">
 
-
-
-
+<img title="" src="resourse/ai.png" alt="" width="886">
 
 ## 技术栈
 
@@ -157,7 +155,9 @@ docker compose down        # 停止服务
    ```bash
    docker logs meeting-room | grep "密码"
    ```
+
 2. 使用账号 `admin` + 该密码登录
+
 3. **登录后立即在「个人信息」页面修改密码**
 
 ### 功能模块
