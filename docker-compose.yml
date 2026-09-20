@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   meeting-room:
-    image: tw/meetingroom
+    image: ghcr.io/taowei20/meetingroom:latest
     container_name: meeting-room
     ports:
       - "80:80"
