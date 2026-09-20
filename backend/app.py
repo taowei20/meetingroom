@@ -119,7 +119,7 @@ def init_data():
     print(f"\n{'='*50}")
     print(f"  初始管理员账号已创建")
     print(f"  用户名: admin")
-    print(f"  密码:   {admin_password}")
+    print(f"  密码:   {admin_password}",flush = True)
     print(f"  请登录后立即修改密码!")
     print(f"{'='*50}\n")
 
